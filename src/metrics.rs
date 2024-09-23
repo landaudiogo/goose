@@ -1069,7 +1069,10 @@ pub struct GooseMetrics {
     /// Flag indicating whether or not to display metrics. This defaults to false on
     /// Workers, otherwise true.
     pub(crate) display_metrics: bool,
+
+    pub requests_: Vec<(u64, u64)>,
 }
+
 impl GooseMetrics {
     /// Initialize the transaction_metrics vector, and determine which hosts are being
     /// load tested to display when printing metrics.
@@ -2873,8 +2876,11 @@ impl GooseAttack {
                         // `GooseMetrics.requests`, and write to the requests log if enabled.
                         self.record_request_metric(&request_metric).await;
 
+                        let seconds_since_start = (request_metric.elapsed / 1000) as usize;
                         if !self.configuration.report_file.is_empty() {
-                            let seconds_since_start = (request_metric.elapsed / 1000) as usize;
+                            self.metrics
+                                .requests_
+                                .push((request_metric.elapsed, request_metric.response_time));
 
                             let key =
                                 format!("{} {}", request_metric.raw.method, request_metric.name);
